@@ -3,11 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class MainMenu : MonoBehaviour
 {
     [SerializeField] private TMP_Text highScoreText;
     [SerializeField] private TMP_Text energyText;
+    [SerializeField] private Button playButton;
+    [SerializeField] private AndroidNotificationsHandler androidNotificationsHandler;
+    [SerializeField] private iOSNotificationsHandler iOSNotificationsHandler;
     [SerializeField] private int maxEnergy;
     /** this value will be passed to the script from Unity - you can type it in the editor */
     [SerializeField] private int energyRechargeDuration;
@@ -18,8 +22,15 @@ public class MainMenu : MonoBehaviour
     private const string EnergyReadyKey = "EnergyReady";
 
     /** we want to load the highest score every time we load a MainMenu scene - thats why we use Start() method */
-    public void Start()
+    private void Start()
     {
+        OnApplicationFocus(true);
+    }
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus) { return; }
+        CancelInvoke();
+
         Debug.Log("Starting the game");
         int highScore = PlayerPrefs.GetInt(ScoreSystem.HighScoreKey, 0);
         // highScoreText.text = highScore.ToString();
@@ -48,10 +59,25 @@ public class MainMenu : MonoBehaviour
                 energy = maxEnergy;
                 PlayerPrefs.SetInt(EnergyKey, energy);
             }
+            else
+            {
+                playButton.interactable = false;
+                Invoke(nameof(EnergyRechared), (energyReady - DateTime.Now).Seconds);
+            }
         }
 
         energyText.text = $"Play ({energy})";
     }
+
+    private void EnergyRechared()
+    {
+        playButton.interactable = true;
+        energy = maxEnergy;
+        PlayerPrefs.SetInt(EnergyKey, energy);
+        energyText.text = $"Play ({energy})";
+
+    }
+
     public void Play()
     {
         if (energy < 1)
@@ -66,6 +92,11 @@ public class MainMenu : MonoBehaviour
             Debug.Log("Countdown started");
             DateTime timeWhenEnergyWillRecharge = DateTime.Now.AddMinutes(energyRechargeDuration);
             PlayerPrefs.SetString(EnergyReadyKey, timeWhenEnergyWillRecharge.ToString());
+#if UNITY_ANDROID
+            androidNotificationsHandler.ScheduleNotification(timeWhenEnergyWillRecharge);
+#elif UNITY_IOS
+            iOSNotificationsHandler.SchedleNotification(timeWhenEnergyWillRecharge);
+#endif
         }
         /** Main Menu scene = 0 so the Game scene = 1 */
         UnityEngine.SceneManagement.SceneManager.LoadScene(1);
