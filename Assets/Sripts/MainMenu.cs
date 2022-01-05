@@ -95,7 +95,7 @@ public class MainMenu : MonoBehaviour
 #if UNITY_ANDROID
             androidNotificationsHandler.ScheduleNotification(timeWhenEnergyWillRecharge);
 #elif UNITY_IOS
-            iOSNotificationsHandler.SchedleNotification(timeWhenEnergyWillRecharge);
+            iOSNotificationsHandler.ScheduleNotification(timeWhenEnergyWillRecharge);
 #endif
         }
         /** Main Menu scene = 0 so the Game scene = 1 */
